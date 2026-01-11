@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Giorgio Armani Royale</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Montserrat:wght@100;300;400;700&family=Cormorant+Garamond:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      position: fixed;
+    }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #030706;
+      color: #f3e29f;
+      margin: 0;
+    }
+    .font-bodoni {
+      font-family: 'Bodoni Moda', serif;
+    }
+    .font-montserrat {
+      font-family: 'Montserrat', sans-serif;
+    }
+    .font-garamond {
+      font-family: 'Cormorant Garamond', serif;
+    }
+    @keyframes shine-gold {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    @keyframes scaleInLux {
+      0% { transform: scale(0.9) translateY(40px); opacity: 0; filter: blur(20px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+    }
+    @keyframes particles-float {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0; }
+      20% { opacity: 0.6; }
+      80% { opacity: 0.6; }
+      100% { transform: translateY(-100vh) rotate(720deg) scale(0.5); opacity: 0; }
+    }
+    @keyframes sweep-shimmer {
+      0% { transform: translateX(-100%) skewX(-25deg); }
+      100% { transform: translateX(250%) skewX(-25deg); }
+    }
+    @keyframes lens-flare {
+      0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 0.1; }
+      50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.2); opacity: 0.2; }
+      100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); opacity: 0.1; }
+    }
+    .gold-shine {
+      background: linear-gradient(90deg, #8a6d3b, #f3e29f, #fff, #f3e29f, #8a6d3b);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine-gold 5s linear infinite;
+    }
+    .armani-gradient {
+      background: radial-gradient(circle at 50% 40%, #1a2e26 0%, #08110e 40%, #030706 100%);
+    }
+    .gold-leaf {
+      position: absolute;
+      background: linear-gradient(135deg, #f3e29f 0%, #cfa24d 100%);
+      pointer-events: none;
+      animation: particles-float var(--duration) infinite linear;
+      box-shadow: 0 0 10px rgba(243, 226, 159, 0.4);
+    }
+    .modal-entry {
+      animation: scaleInLux 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .vortex-spin {
+      animation: rotate-vortex 30s linear infinite;
+    }
+    @keyframes rotate-vortex {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .flare-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 150%;
+      height: 150%;
+      background: radial-gradient(circle, rgba(243, 226, 159, 0.05) 0%, transparent 70%);
+      animation: lens-flare 15s infinite linear;
+      pointer-events: none;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root" class="h-full w-full"></div>
+</body>
+</html>
