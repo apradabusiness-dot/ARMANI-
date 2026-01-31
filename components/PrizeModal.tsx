@@ -1,6 +1,7 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Prize } from '../types';
+import html2canvas from 'html2canvas';
 
 interface PrizeModalProps {
   prize: Prize;
@@ -8,104 +9,213 @@ interface PrizeModalProps {
   onClose: () => void;
 }
 
-export const PrizeModal: React.FC<PrizeModalProps> = ({ prize, onClose }) => {
+export const PrizeModal: React.FC<PrizeModalProps> = ({ prize, fortune, onClose }) => {
   const [isRendered, setIsRendered] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsRendered(true), 100);
+    const timer = setTimeout(() => setIsRendered(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/98 backdrop-blur-3xl transition-opacity duration-1000 ${isRendered ? 'opacity-100' : 'opacity-0'} overflow-hidden`}>
+  const downloadVoucherPNG = async () => {
+    if (!exportRef.current || isDownloading) return;
+    
+    try {
+      setIsDownloading(true);
       
-      {/* Deep Background Ambience */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
-          <div className="w-[1000px] h-[1000px] rounded-full border border-[#cfa24d]/10 vortex-spin" style={{ animationDuration: '40s' }}></div>
-          <div className="absolute w-[800px] h-[800px] rounded-full border border-[#cfa24d]/5 vortex-spin" style={{ animationDirection: 'reverse', animationDuration: '60s' }}></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black"></div>
+      // 1. Wait for fonts
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+      
+      // 2. Wait for rendering frames to ensure the invisible card is painted
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 3. High-quality capture (960x640)
+      const canvas = await html2canvas(exportRef.current, {
+        backgroundColor: '#0D1A16',
+        scale: 3, 
+        useCORS: true,
+        logging: false,
+        width: 960,
+        height: 640,
+        removeContainer: true,
+      });
+      
+      // 4. Filename with timestamp
+      const now = new Date();
+      const timestamp = now.getFullYear().toString() + 
+                        (now.getMonth() + 1).toString().padStart(2, '0') + 
+                        now.getDate().toString().padStart(2, '0') + '-' +
+                        now.getHours().toString().padStart(2, '0') + 
+                        now.getMinutes().toString().padStart(2, '0');
+
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `Voucher-${prize.label}-${timestamp}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setIsDownloading(false);
+    } catch (err) {
+      console.error("Export Error:", err);
+      setIsDownloading(false);
+      alert('Gagal mengunduh voucher. Silakan coba lagi.');
+    }
+  };
+
+  /**
+   * ELITE EXPORT TEMPLATE (960x640)
+   * Strictly matches the requested "Stripe & Frame" aesthetic.
+   */
+  const ExportVoucherTemplate = () => {
+    return (
+      <div 
+        id="voucherExportCard"
+        className="relative flex flex-col items-center justify-center overflow-hidden"
+        style={{ 
+          width: '960px', 
+          height: '640px', 
+          background: 'linear-gradient(to right, #0D1A16 0%, #0D1A16 35%, #2D0A0A 50%, #0D1A16 65%, #0D1A16 100%)'
+        }}
+      >
+        {/* A) BACKGROUND EFFECTS */}
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-radial-gradient(circle, transparent 20%, rgba(0,0,0,0.85) 100%) pointer-events-none z-[1]"></div>
+        
+        {/* Grain Texture */}
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none z-[5]" 
+             style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }}>
+        </div>
+
+        {/* B) HEADER AREA */}
+        <div className="z-10 flex flex-col items-center space-y-3 mb-4">
+          <div className="w-12 h-[0.5px] bg-[#C8A45D]/40"></div>
+          <span className="text-[#e6e6e6]/60 font-montserrat text-[12px] tracking-[1.2em] font-medium uppercase select-none ml-[1.2em]">
+            Official Reward
+          </span>
+          <div className="w-12 h-[0.5px] bg-[#C8A45D]/40"></div>
+        </div>
+
+        {/* C) MAIN FRAME (CENTER) */}
+        <div className="relative z-10 w-[640px] h-[360px] flex flex-col items-center justify-center">
+          {/* Outer Gold Border */}
+          <div className="absolute inset-0 border-[2px] border-[#C8A45D]/60 rounded-[24px]"></div>
+          {/* Inner Dashed Border */}
+          <div className="absolute inset-[10px] border border-dashed border-[#C8A45D]/20 rounded-[18px]"></div>
+          
+          {/* D) CONTENT INSIDE FRAME */}
+          <div className="relative flex flex-col items-center space-y-6">
+            
+            {/* Badge: Exclusive Access */}
+            <div className="px-5 py-1.5 rounded-full border border-[#C8A45D]/40 bg-black/40 backdrop-blur-sm">
+              <span className="text-[#C8A45D] font-montserrat text-[10px] tracking-[0.4em] font-bold uppercase select-none ml-[0.4em]">
+                Exclusive Access
+              </span>
+            </div>
+
+            {/* Nominal */}
+            <h2 className="font-bodoni font-bold italic text-[140px] leading-none select-none tracking-tighter"
+                style={{ 
+                  color: '#f2e1c1',
+                  textShadow: '0 10px 40px rgba(0,0,0,0.6)',
+                  filter: 'drop-shadow(0 0 10px rgba(200,164,93,0.1))'
+                }}>
+              {prize.label}
+            </h2>
+
+            {/* Voucher Label with Lines */}
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-[0.5px] bg-[#C8A45D]/30"></div>
+              <span className="text-[#C8A45D]/80 font-montserrat text-[16px] tracking-[1em] font-light uppercase ml-[1em] select-none">
+                Voucher
+              </span>
+              <div className="w-16 h-[0.5px] bg-[#C8A45D]/30"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* E) FOOTER */}
+        <div className="z-10 mt-12">
+          <p className="text-[#e6e6e6]/70 font-montserrat text-[11px] tracking-[0.4em] uppercase font-medium select-none text-center">
+            SELAMAT ATAS BONUS VOUCHER YANG ANDA DAPATKAN.
+          </p>
+          <div className="w-32 h-[1px] bg-gradient-to-r from-transparent via-[#C8A45D]/20 to-transparent mx-auto mt-4"></div>
+        </div>
+
+      </div>
+    );
+  };
+
+  const PreviewCard = () => (
+    <div className="relative w-full aspect-[3/2] flex flex-col items-center justify-center bg-[#0D1A16] overflow-hidden rounded-[4px] border border-[#C8A45D]/10">
+      <div className="absolute inset-0 bg-radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 100%) pointer-events-none"></div>
+      <div className="absolute inset-4 border border-[#C8A45D]/20 pointer-events-none"></div>
+      <div className="z-10 w-[75%] flex flex-col items-center text-center space-y-6">
+        <span className="text-[rgba(230,230,230,0.3)] font-montserrat text-[8px] tracking-[0.6em] uppercase">Official Reward</span>
+        <div className="border border-[#C8A45D]/40 rounded-xl p-6 w-full flex flex-col items-center">
+           <div className="flex flex-col items-center -space-y-1">
+            <h2 className="font-bodoni font-bold italic text-[#f2e1c1] text-[64px] sm:text-[72px] leading-tight tracking-tighter">{prize.label}</h2>
+            <span className="text-[#C8A45D]/50 font-montserrat text-[10px] tracking-[1em] uppercase ml-[1em]">Voucher</span>
+          </div>
+        </div>
+        <p className="text-[rgba(230,230,230,0.4)] font-montserrat text-[6px] tracking-[0.3em] uppercase">CONGRATULATION</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className={`fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 bg-black/98 backdrop-blur-3xl transition-opacity duration-700 ${isRendered ? 'opacity-100' : 'opacity-0'} overflow-hidden`}>
+      
+      {/* 
+          OFFSCREEN RENDER ROOT (Invisible but in viewport for browser painting)
+      */}
+      <div 
+        id="voucherExportRoot"
+        className="fixed inset-0 flex items-center justify-center opacity-0 pointer-events-none z-[-1]"
+        aria-hidden="true"
+      >
+        <div ref={exportRef} style={{ width: '960px', height: '640px' }}>
+          <ExportVoucherTemplate />
+        </div>
       </div>
 
-      {/* Floating Particles */}
-      {Array.from({ length: 40 }).map((_, i) => (
-        <div 
-          key={i} 
-          className="gold-leaf"
-          style={{
-            left: `${Math.random() * 100}%`,
-            bottom: `-20px`,
-            width: `${Math.random() * 5 + 2}px`,
-            height: `${Math.random() * 5 + 2}px`,
-            '--duration': `${Math.random() * 4 + 3}s`,
-            animationDelay: `${Math.random() * 5}s`,
-          } as any}
-        />
-      ))}
-
-      {/* Luxury Prize Card Container - Responsive optimized */}
-      <div className={`relative w-full max-w-[360px] bg-[#030706] border border-[#cfa24d]/40 rounded-[24px] sm:rounded-[30px] overflow-hidden shadow-[0_0_150px_rgba(207,162,77,0.2)] p-1 text-center transition-all duration-1000 transform ${isRendered ? 'scale-100 translate-y-0' : 'scale-90 translate-y-10'}`}>
-        
-        {/* Patterned Overlay */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-linen.png')] opacity-20 pointer-events-none"></div>
-
-        <div className="relative border border-[#cfa24d]/20 rounded-[22px] sm:rounded-[28px] p-6 sm:p-10 flex flex-col items-center">
-          
-          <div className="flex items-center gap-4 sm:gap-6 mb-6 sm:mb-8 opacity-60 animate-pulse">
-            <div className="h-[0.5px] w-6 sm:w-8 bg-[#cfa24d]"></div>
-            <span className="text-[#f3e29f] font-montserrat uppercase tracking-[0.4em] text-[8px] sm:text-[9px] font-bold whitespace-nowrap">
-              Armani Reward
-            </span>
-            <div className="h-[0.5px] w-6 sm:w-8 bg-[#cfa24d]"></div>
-          </div>
-
-          {/* Premium Voucher Card - Scaled for Mobile */}
-          <div className="relative w-full aspect-[16/10] bg-[#000] border border-[#cfa24d]/60 rounded-xl p-6 sm:p-8 mb-8 sm:mb-12 flex flex-col items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,1)] overflow-hidden group">
-            {/* Moving Gold Foil Reflection */}
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/15 to-transparent w-[300%] h-full -translate-x-[150%] skew-x-[-30deg] animate-[sweep-shimmer_5s_infinite_ease-in-out]"></div>
-            
-            <div className="absolute inset-3 border-[0.5px] border-[#cfa24d]/30"></div>
-            
-            <div className="px-4 sm:px-6 py-1.5 sm:py-2 bg-[#cfa24d]/20 border border-[#cfa24d]/40 rounded-full text-[8px] sm:text-[9px] text-[#f3e29f] font-montserrat tracking-[0.4em] sm:tracking-[0.5em] uppercase mb-6 sm:mb-8 z-10 shadow-[0_0_15px_rgba(207,162,77,0.3)]">
-              Congratulation
-            </div>
-
-            <div className="font-bodoni text-5xl sm:text-6xl font-bold text-[#fff] drop-shadow-[0_10px_15px_rgba(0,0,0,1)] mb-3 sm:mb-4 italic z-10 gold-shine">
-              {prize.label}
-            </div>
-
-            <div className="flex items-center gap-4 sm:gap-6 w-full max-w-[160px] sm:max-w-[200px] z-10">
-              <div className="h-[0.5px] flex-1 bg-[#cfa24d]/50"></div>
-              <span className="text-[#cfa24d] font-montserrat uppercase tracking-[0.4em] sm:tracking-[0.5em] text-[9px] sm:text-[10px] font-medium">Voucher</span>
-              <div className="h-[0.5px] flex-1 bg-[#cfa24d]/50"></div>
-            </div>
-          </div>
-
-          <p className="text-[#f3e29f]/90 font-garamond italic text-lg sm:text-xl leading-relaxed mb-8 sm:mb-12 max-w-[280px] sm:max-w-[300px] px-2">
-            Selamat atas voucher yang berhasil Anda dapatkan. Silakan simpan bukti ini dan kirimkan kepada mentor pembimbing Anda.
-          </p>
-
-          {/* Luxury Action Button - Mobile Height Optimized */}
-          <button
-            onClick={onClose}
-            className="group w-full flex items-center justify-center gap-4 sm:gap-6 py-4 sm:py-6 bg-gradient-to-b from-[#111] to-[#000] border border-[#cfa24d]/50 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8)] active:scale-95 transition-all duration-700 overflow-hidden relative"
-          >
-            <div className="absolute inset-0 bg-[#cfa24d]/10 translate-y-full group-hover:translate-y-0 transition-transform duration-700"></div>
-            
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black border border-[#cfa24d]/40 flex items-center justify-center text-[#f3e29f] group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(243,226,159,0.3)] transition-all duration-700 z-10">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-5 h-5 sm:w-6 sm:h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-              </svg>
-            </div>
-            <div className="flex flex-col items-start leading-none gap-1 sm:gap-2 z-10">
-              <span className="text-[#f3e29f] font-montserrat font-bold text-[10px] sm:text-[11px] tracking-[0.3em] sm:tracking-[0.4em] uppercase">Simpan Bukti</span>
-              <span className="text-[#f3e29f]/40 font-montserrat text-[8px] sm:text-[9px] tracking-[0.1em] sm:tracking-[0.15em] uppercase">Screenshot Confirmation</span>
-            </div>
-          </button>
+      <div className="relative w-full max-w-[480px] flex flex-col items-center animate-scale-in" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="w-full shadow-[0_40px_100px_rgba(0,0,0,1)]">
+          <PreviewCard />
         </div>
-        
-        {/* Footnote accent */}
-        <div className="py-3 sm:py-4 bg-black/60 border-t border-[#cfa24d]/20 shadow-[inset_0_10px_20px_rgba(0,0,0,0.5)]">
-          <p className="text-[#cfa24d]/30 font-montserrat text-[7px] tracking-[0.8em] sm:tracking-[1em] uppercase whitespace-nowrap px-4">GIORGIO ARMANI MILANO</p>
+
+        <div className="mt-8 text-center px-4 mb-8">
+          <p className="text-[#B8B8B8] font-garamond italic text-[14px] sm:text-[16px] leading-relaxed max-w-[360px] mx-auto opacity-70">
+            "{fortune || `Selamat atas pencapaian istimewa Anda meraih Armani Voucher senilai ${prize.label}. Ini adalah bentuk apresiasi kami terhadap dedikasi anda.`}"
+          </p>
+        </div>
+
+        <div className="w-full flex flex-col gap-3 px-8">
+          <button
+            onClick={downloadVoucherPNG}
+            disabled={isDownloading}
+            className={`
+              w-full py-4 rounded-none font-montserrat text-[10px] tracking-[0.6em] font-bold uppercase transition-all duration-300 border
+              ${isDownloading 
+                ? 'bg-[#1a1a1a] text-[#444444] border-[#222222] cursor-wait' 
+                : 'bg-[#C8A45D] text-black border-[#C8A45D] shadow-[0_15px_30px_rgba(200,164,93,0.1)] hover:brightness-110 active:scale-95'}
+            `}
+          >
+            {isDownloading ? 'MENYIAPKAN...' : 'UNDUH VOUCHER'}
+          </button>
+          
+          <button 
+            onClick={onClose}
+            className="w-full py-2 text-[#444444] font-montserrat text-[8px] tracking-[0.5em] uppercase hover:text-[#B8B8B8] transition-colors"
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>
